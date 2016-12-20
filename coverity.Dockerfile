@@ -1,11 +1,11 @@
-FROM gcc:4.9
+FROM knight42/clang
 
 # One dependency per line in alphabetical order.
 # This should help avoiding duplicates and make the file easier to update.
 RUN apt-get update && apt-get install -y \
     curl \
     git \
-    libprocps3-dev \
+    libprocps-dev \
     libssl-dev \
     python-cheetah \
     pkg-config \
