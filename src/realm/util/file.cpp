@@ -313,7 +313,7 @@ void File::open_internal(const std::string& path, AccessMode a, CreateMode c, in
         flags2 |= O_TRUNC;
     if (flags & flag_Append)
         flags2 |= O_APPEND;
-    int fd = ::open(path.c_str(), flags2, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	int fd = ::open(path.c_str(), flags2, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (0 <= fd) {
         m_fd = fd;
         if (success)
@@ -863,31 +863,20 @@ void* File::map(AccessMode a, size_t size, int map_flags, size_t offset) const
 }
 
 #if REALM_ENABLE_ENCRYPTION
-#ifdef _WIN32
-#error "Encryption is not supported on Windows"
-#else
 void* File::map(AccessMode a, size_t size, EncryptedFileMapping*& mapping, int map_flags, size_t offset) const
 {
+#ifdef _WIN32
+	return map(a, size, map_flags, offset);
+#else
     static_cast<void>(map_flags);
-
-    return realm::util::mmap(m_fd, size, a, offset, m_encryption_key.get(), mapping);
-}
+	realm::util::mmap(m_fd, size, a, offset, m_encryption_key.get(), mapping);
 #endif
+}
 #endif
 
 void File::unmap(void* addr, size_t size) noexcept
 {
-#ifdef _WIN32 // Windows version
-
-    static_cast<void>(size);
-    BOOL r = UnmapViewOfFile(addr);
-    REALM_ASSERT_RELEASE(r);
-
-#else // POSIX version
-
     realm::util::munmap(addr, size);
-
-#endif
 }
 
 

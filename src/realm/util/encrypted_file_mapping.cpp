@@ -31,8 +31,11 @@
 
 #include <cstring>
 #include <pthread.h>
+
+#ifndef _WIN32
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 #include <realm/util/encrypted_file_mapping.hpp>
 #include <realm/util/terminate.hpp>
@@ -40,7 +43,7 @@
 namespace realm {
 namespace util {
 
-SharedFileInfo::SharedFileInfo(const uint8_t* key, int file_descriptor)
+SharedFileInfo::SharedFileInfo(const uint8_t* key, File file_descriptor)
     : fd(file_descriptor)
     , cryptor(key)
 {
@@ -112,17 +115,22 @@ off_t iv_table_pos(off_t pos)
     return metadata_block * (blocks_per_metadata_block + 1) * block_size + metadata_index * metadata_size;
 }
 
-void check_write(int fd, off_t pos, const void* data, size_t len)
+void check_write(File fd, off_t pos, const void* data, size_t len)
 {
-    ssize_t ret = pwrite(fd, data, len, pos);
-    REALM_ASSERT(ret >= 0 && static_cast<size_t>(ret) == len);
+	fd.seek(pos);
+	fd.write((char*)data, len);
+    //REALM_ASSERT(ret >= 0 && static_cast<size_t>(ret) == len);
 }
 
-size_t check_read(int fd, off_t pos, void* dst, size_t len)
+size_t check_read(File fd, off_t pos, void* dst, size_t len)
 {
-    ssize_t ret = pread(fd, dst, len, pos);
-    REALM_ASSERT(ret >= 0);
-    return ret < 0 ? 0 : static_cast<size_t>(ret);
+	fd.seek(pos);
+	fd.read((char*)dst, len);
+
+//	ssize_t ret = pread(fd, dst, len, pos);
+//    REALM_ASSERT(ret >= 0);
+	return len;
+//    return ret < 0 ? 0 : static_cast<size_t>(ret);
 }
 
 } // anonymous namespace
@@ -156,7 +164,7 @@ void AESCryptor::set_file_size(off_t new_size)
     m_iv_buffer.reserve((block_count + blocks_per_metadata_block - 1) & ~(blocks_per_metadata_block - 1));
 }
 
-iv_table& AESCryptor::get_iv_table(int fd, off_t data_pos) noexcept
+iv_table& AESCryptor::get_iv_table(File fd, off_t data_pos) noexcept
 {
     REALM_ASSERT(!int_cast_has_overflow<size_t>(data_pos));
     size_t data_pos_casted = size_t(data_pos);
@@ -190,7 +198,7 @@ bool AESCryptor::check_hmac(const void* src, size_t len, const uint8_t* hmac) co
     return result == 0;
 }
 
-bool AESCryptor::read(int fd, off_t pos, char* dst, size_t size)
+bool AESCryptor::read(File fd, off_t pos, char* dst, size_t size)
 {
     REALM_ASSERT(size % block_size == 0);
     while (size > 0) {
@@ -242,7 +250,7 @@ bool AESCryptor::read(int fd, off_t pos, char* dst, size_t size)
     return true;
 }
 
-void AESCryptor::write(int fd, off_t pos, const char* src, size_t size) noexcept
+void AESCryptor::write(File fd, off_t pos, const char* src, size_t size) noexcept
 {
     REALM_ASSERT(size % block_size == 0);
     while (size > 0) {
@@ -412,6 +420,8 @@ void EncryptedFileMapping::write_page(size_t page) noexcept
 
 void EncryptedFileMapping::validate_page(size_t page) noexcept
 {
+	/*
+
 #ifdef REALM_DEBUG
     if (!m_up_to_date_pages[page])
         return;
@@ -435,6 +445,7 @@ void EncryptedFileMapping::validate_page(size_t page) noexcept
 #else
     static_cast<void>(page);
 #endif
+*/
 }
 
 void EncryptedFileMapping::validate() noexcept
@@ -462,7 +473,9 @@ void EncryptedFileMapping::flush() noexcept
 
 void EncryptedFileMapping::sync() noexcept
 {
-    fsync(m_file.fd);
+#ifdef _WIN32
+#else
+	fsync(m_file.fd);
     // FIXME: on iOS/OSX fsync may not be enough to ensure crash safety.
     // Consider adding fcntl(F_FULLFSYNC). This most likely also applies to msync.
     //
@@ -472,6 +485,7 @@ void EncryptedFileMapping::sync() noexcept
     // See also
     // https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/CoreData/Articles/cdPersistentStores.html
     // for a discussion of this related to core data.
+#endif
 }
 
 

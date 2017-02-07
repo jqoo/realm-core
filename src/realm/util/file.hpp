@@ -115,6 +115,19 @@ public:
     File(File&&) noexcept;
     File& operator=(File&&) noexcept;
 
+	inline File(File& f) noexcept
+	{
+#ifdef _WIN32
+		m_handle = f.m_handle;
+		m_have_lock = f.m_have_lock;
+		f.m_handle = nullptr;
+#else
+		m_fd = f.m_fd;
+		f.m_fd = -1;
+#endif
+		m_encryption_key = std::move(f.m_encryption_key);
+	}
+
     /// Calling this function on an instance that is already attached
     /// to an open file has undefined behavior.
     ///
@@ -503,6 +516,8 @@ public:
     class Exists;
 
 private:
+
+public:
 #ifdef _WIN32
     void* m_handle;
     bool m_have_lock; // Only valid when m_handle is not null
@@ -511,6 +526,9 @@ private:
 #else
     int m_fd;
 #endif
+private:
+
+
 
     std::unique_ptr<const char[]> m_encryption_key;
 

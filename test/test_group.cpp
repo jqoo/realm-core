@@ -1925,7 +1925,7 @@ TEST(Group_IndexString)
 }
 
 
-TEST(Group_StockBug)
+ONLY(Group_StockBug)
 {
     // This test is a regression test - it once triggered a bug.
     // the bug was fixed in pr 351. In release mode, it crashes
