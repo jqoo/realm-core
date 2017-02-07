@@ -1493,7 +1493,7 @@ public:
 
     std::unique_ptr<ParentNode> clone(QueryNodeHandoverPatches* patches) const override
     {
-        return std::unique_ptr<ParentNode>(new StringNode<Equal>(*this, patches));
+        return std::unique_ptr<ParentNode>(new StringNode(*this, patches));
     }
 
     StringNode(const StringNode& from, QueryNodeHandoverPatches* patches)
