@@ -1734,4 +1734,61 @@ TEST(StringIndex_Fuzzy)
 }
 
 
+// strings used by tests
+const char s8[] = "john";
+const char s9[] = "John";
+const char s10[] = "jOhn";
+const char s11[] = "JOhn";
+const char s12[] = "joHn";
+const char s13[] = "JoHn";
+const char s14[] = "jOHn";
+
+
+ONLY_TYPES(StringIndex_Insensitive, non_nullable, nullable)
+{
+    constexpr bool nullable = TEST_TYPE::value;
+
+    // Create a column with string values
+    ref_type ref = StringColumn::create(Allocator::get_default());
+    StringColumn col(Allocator::get_default(), ref, nullable);
+
+    col.add(s8);
+    col.add(s9);
+    col.add(s10);
+    col.add(s11);
+    col.add(s12);
+    col.add(s13);
+    col.add(s14);
+
+
+    // Create a new index on column
+    const StringIndex& ndx = *col.create_search_index();
+
+    ndx.find_first(<#T value#>)
+//
+//    const size_t r1 = ndx.find_first(s1);
+//    const size_t r2 = ndx.find_first(s2);
+//    const size_t r3 = ndx.find_first(s3);
+//    const size_t r4 = ndx.find_first(s4);
+//    const size_t r5 = ndx.find_first(s5);
+//    const size_t r6 = ndx.find_first(s6);
+//
+//
+//    ref_type results_ref = IntegerColumn::create(Allocator::get_default());
+//    IntegerColumn results(Allocator::get_default(), results_ref);
+//    ndx.find_all(results, StringData("Foob"));
+//    CHECK_EQUAL(0, results.size());
+//
+//    CHECK_EQUAL(0, r1);
+//    CHECK_EQUAL(1, r2);
+//    CHECK_EQUAL(2, r3);
+//    CHECK_EQUAL(3, r4);
+//    CHECK_EQUAL(5, r5);
+//    CHECK_EQUAL(6, r6);
+
+    // Clean up
+    col.destroy();
+}
+
+
 #endif // TEST_INDEX_STRING
